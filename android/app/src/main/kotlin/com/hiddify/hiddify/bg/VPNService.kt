@@ -10,6 +10,8 @@ import android.os.Build
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import com.hiddify.core.libbox.Notification
+import com.hiddify.core.mobile.Mobile
+import com.hiddify.core.mobile.SocketProtector
 import com.hiddify.hiddify.constant.PerAppProxyMode
 import com.hiddify.hiddify.ktx.toIpPrefix
 import com.hiddify.core.libbox.TunOptions
@@ -25,6 +27,17 @@ class VPNService : VpnService(), PlatformInterfaceWrapper {
 
     private val service = BoxService(this, this)
 
+    // Olcrtc protector: pion/webrtc opens its own sockets inside the Go
+    // runtime; without VpnService.protect() those sockets get routed back
+    // into the VPN tunnel and the WebRTC transport loops on itself.
+    private val olcrtcProtector = object : SocketProtector {
+        override fun protect(fd: Long): Boolean = this@VPNService.protect(fd.toInt())
+    }
+
+    init {
+        Mobile.setOlcrtcProtector(olcrtcProtector)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int) =
         service.onStartCommand()
 
@@ -37,6 +50,7 @@ class VPNService : VpnService(), PlatformInterfaceWrapper {
     }
 
     override fun onDestroy() {
+        Mobile.setOlcrtcProtector(null)
         service.onDestroy()
     }
 
