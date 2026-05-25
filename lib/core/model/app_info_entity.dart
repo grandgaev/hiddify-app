@@ -17,7 +17,13 @@ class AppInfoEntity with _$AppInfoEntity {
     required Environment environment,
   }) = _AppInfoEntity;
 
-  String get userAgent => "HiddifyNext/$version ($operatingSystem) like ClashMeta v2ray sing-box";
+  // RedHead-fork UA: контрол-сервер фильтрует подписку по токену `redhead`
+  // в UA (см. vpn-control/main.py:_ALLOWED_SUB_UA_TOKENS). Если изменить
+  // префикс — обнови whitelist там же, иначе клиент получит 404 на /sub.
+  // Сохраняем хвост `like HiddifyNext ...` чтобы heuristic-based парсеры
+  // (на стороне некоторых subscription-агрегаторов) распознавали клиента
+  // как VLESS/Reality-совместимый.
+  String get userAgent => "RedHeadClient/$version ($operatingSystem) like HiddifyNext ClashMeta v2ray sing-box";
 
   String get presentVersion => environment == Environment.prod ? version : "$version ${environment.name}";
 
